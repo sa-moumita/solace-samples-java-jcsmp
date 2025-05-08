@@ -74,7 +74,16 @@ public class ArgParser {
 					sc.setRouterPassword(args[i]);
 				} else if (args[i].equals("-z")) {
 					sc.setCompression(true);
-				} else if (args[i].equals("-t")) {
+                }else if (args[i].equals("-q")) {
+					i++;
+					sc.setQueueName(args[i]);				
+                }else if (args[i].equals("-k")) {
+					i++;
+					sc.setCorrelationKey(args[i]);		
+                }else if (args[i].equals("-v")) {
+					i++;
+					sc.setCorrelationValue(args[i]);		                    		
+                } else if (args[i].equals("-t")) {
 					i++;
 					String dm = args[i].toLowerCase();
 					DeliveryMode dmobj = parseDeliveryMode(dm);
