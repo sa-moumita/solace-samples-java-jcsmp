@@ -35,7 +35,35 @@ public class SessionConfiguration {
 	private boolean compression = false;
 		
 	private AuthenticationScheme authScheme = AuthenticationScheme.BASIC;
-	
+
+	private String queueName;
+	private String correlationKey;
+	private String correlationValue;
+
+	public String getCorrelationKey() {
+		return correlationKey;
+	}
+
+	public void setCorrelationKey(String correlationKey) {
+		this.correlationKey = correlationKey;
+	}
+
+	public String getCorrelationValue() {
+		return correlationValue;
+	}
+
+	public void setCorrelationValue(String correlationValue) {
+		this.correlationValue = correlationValue;
+	}
+
+	public String getQueueName() {
+		return queueName;
+	}
+
+	public void setQueueName(String queueName) {
+		this.queueName = queueName;
+	}
+
 	public Map<String, String> getArgBag() {
 		return argBag;
 	}
