@@ -123,7 +123,7 @@ def scripts = [
     'topicToQueueMapping':'com.solace.samples.jcsmp.features.TopicToQueueMapping',
     'dtDirectPublisher':'com/solace/samples/jcsmp/features/distributedtracing/DirectPublisherWithManualInstrumentation',
     'GuaranteedSubscriberWithSettle':'com.solace.samples.jcsmp.patterns.GuaranteedSubscriberWithSettle',
-    'dtDirectSubscriber':'com/solace/samples/jcsmp/features/distributedtracing/DirectSubscriberWithManualInstrumentation'
+    'dtDirectSubscriber':'com/solace/samples/jcsmp/features/distributedtracing/DirectSubscriberWithManualInstrumentation',
     'CustomQueueBrowse': 'com.solace.samples.jcsmp.custom.CustomQueueBrowse',
     'CustomMsgSelectorsOnQueue': 'com.solace.samples.jcsmp.custom.CustomMsgSelectorsOnQueue'
 ]
