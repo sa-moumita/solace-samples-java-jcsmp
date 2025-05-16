@@ -119,6 +119,9 @@ public class CustomQueueBrowse extends SampleApp {
 			br_prop.setEndpoint(ep_queue);
 			br_prop.setTransportWindowSize(1);
 			br_prop.setWaitTimeout(1000);
+			if(conf.getCorrelationKey() != null && !"".equals(conf.getCorrelationKey())){
+				br_prop.setSelector(conf.getCorrelationKey() + " = '" + conf.getCorrelationValue() + "'");
+			}		
 			Browser myBrowser = session.createBrowser(br_prop);
 			BytesXMLMessage rx_msg = null;
 			
