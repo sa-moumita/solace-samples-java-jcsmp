@@ -124,15 +124,50 @@ public class CustomQueueBrowse extends SampleApp {
 			}		
 			Browser myBrowser = session.createBrowser(br_prop);
 			BytesXMLMessage rx_msg = null;
-			
+			JSONArray jsonArray = new JSONArray();
+			StringBuffer sb = new StringBuffer();
 			do {
-				rx_msg = myBrowser.getNext();
-				if (rx_msg != null) {			
-					System.out.println("Browser got message... dumping:");					
-					System.out.println(rx_msg.dump());					
-				}
+				//System.out.println("Browser got message... dumping: START");
+				JSONObject json = new JSONObject();
+				//System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+				sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+				
+				//System.out.println(rx_msg.getMessageId());					
+				//System.out.println(rx_msg.getCorrelationId());
+				//System.out.println(rx_msg.getAttachmentContentLength());
+				String queueData = "";
+				if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
+					//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
+					queueData = new String(((TextMessageImpl)rx_msg).getText());
+				}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
+					//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
+					queueData = new String(((BytesMessage)rx_msg).getData());
+				}	
+				
+				json.put("messageId", rx_msg.getMessageId());
+				json.put("correlationId", rx_msg.getCorrelationId());
+				json.put("attachmentLength", rx_msg.getAttachmentContentLength());
+				json.put("queueData", queueData);
+				sb.append("content: " + queueData);
+				sb.append("\n-----------------------------------------------------------\n\n");
+				jsonArray.put(json);
+						
+				//System.out.println("Browser got message... dumping: END");
 			} while (rx_msg != null);
 			System.out.println("Finished browsing.");
+			
+			//System.out.println( jsonArray.toString(2));
+			// Write to a file
+			String filePath = "q_content.data";
+			//String fileContent = jsonArray.toString(2);
+			String fileContent = sb.toString();
+
+			try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+				writer.write(fileContent);
+				System.out.println("Successfully wrote to the file.");
+			} catch (IOException e) {
+				System.err.println("An error occurred while writing to the file: " + e.getMessage());
+			}
 			
 			// Close the Browser.
 			myBrowser.close();			
