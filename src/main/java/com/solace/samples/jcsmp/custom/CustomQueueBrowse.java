@@ -15,6 +15,9 @@
 
 package com.solace.samples.jcsmp.custom;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import com.solace.samples.jcsmp.features.common.ArgParser;
@@ -34,6 +37,13 @@ import com.solacesystems.jcsmp.JCSMPSession;
 import com.solacesystems.jcsmp.JCSMPTransportException;
 import com.solacesystems.jcsmp.Queue;
 import com.solacesystems.jcsmp.XMLMessageProducer;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import com.solacesystems.jcsmp.BytesMessage;
+import com.solacesystems.jcsmp.XMLMessage;
+import com.solacesystems.jcsmp.impl.TextMessageImpl;
 
 public class CustomQueueBrowse extends SampleApp {
 	XMLMessageProducer prod = null;
@@ -124,35 +134,38 @@ public class CustomQueueBrowse extends SampleApp {
 			}		
 			Browser myBrowser = session.createBrowser(br_prop);
 			BytesXMLMessage rx_msg = null;
-			JSONArray jsonArray = new JSONArray();
+			//JSONArray jsonArray = new JSONArray();
 			StringBuffer sb = new StringBuffer();
 			do {
-				//System.out.println("Browser got message... dumping: START");
-				JSONObject json = new JSONObject();
-				//System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
-				sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
-				
-				//System.out.println(rx_msg.getMessageId());					
-				//System.out.println(rx_msg.getCorrelationId());
-				//System.out.println(rx_msg.getAttachmentContentLength());
-				String queueData = "";
-				if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
-					//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
-					queueData = new String(((TextMessageImpl)rx_msg).getText());
-				}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
-					//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
-					queueData = new String(((BytesMessage)rx_msg).getData());
-				}	
-				
-				json.put("messageId", rx_msg.getMessageId());
-				json.put("correlationId", rx_msg.getCorrelationId());
-				json.put("attachmentLength", rx_msg.getAttachmentContentLength());
-				json.put("queueData", queueData);
-				sb.append("content: " + queueData);
-				sb.append("\n-----------------------------------------------------------\n\n");
-				jsonArray.put(json);
-						
-				//System.out.println("Browser got message... dumping: END");
+				rx_msg = myBrowser.getNext();
+				if(rx_msg != null){
+					//System.out.println("Browser got message... dumping: START");
+					JSONObject json = new JSONObject();
+					System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+					sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+					
+					//System.out.println(rx_msg.getMessageId());					
+					//System.out.println(rx_msg.getCorrelationId());
+					//System.out.println(rx_msg.getAttachmentContentLength());
+					String queueData = "";
+					if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
+						System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
+						queueData = new String(((TextMessageImpl)rx_msg).getText());
+					}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
+						System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
+						queueData = new String(((BytesMessage)rx_msg).getData());
+					}	
+					
+					//json.put("messageId", rx_msg.getMessageId());
+					//json.put("correlationId", rx_msg.getCorrelationId());
+					//json.put("attachmentLength", rx_msg.getAttachmentContentLength());
+					//json.put("queueData", queueData);
+					sb.append("content: " + queueData);
+					sb.append("\n-----------------------------------------------------------\n\n");
+					//jsonArray.put(json);
+							
+					//System.out.println("Browser got message... dumping: END");
+				}
 			} while (rx_msg != null);
 			System.out.println("Finished browsing.");
 			
