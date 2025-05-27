@@ -140,7 +140,7 @@ public class CustomQueueBrowse extends SampleApp {
 				rx_msg = myBrowser.getNext();
 				if(rx_msg != null){
 					//System.out.println("Browser got message... dumping: START");
-					JSONObject json = new JSONObject();
+					//JSONObject json = new JSONObject();
 					System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
 					sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
 					
@@ -171,7 +171,7 @@ public class CustomQueueBrowse extends SampleApp {
 			
 			//System.out.println( jsonArray.toString(2));
 			// Write to a file
-			String filePath = "q_content.data";
+			String filePath = "q_browse_content.dat";
 			//String fileContent = jsonArray.toString(2);
 			String fileContent = sb.toString();
 
