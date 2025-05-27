@@ -17,10 +17,15 @@
 
 package com.solace.samples.jcsmp.custom;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+
 import com.solace.samples.jcsmp.features.common.ArgParser;
 import com.solace.samples.jcsmp.features.common.SampleApp;
 import com.solace.samples.jcsmp.features.common.SampleUtils;
 import com.solace.samples.jcsmp.features.common.SessionConfiguration;
+import com.solacesystems.jcsmp.BytesMessage;
 import com.solacesystems.jcsmp.BytesXMLMessage;
 import com.solacesystems.jcsmp.CapabilityType;
 import com.solacesystems.jcsmp.Consumer;
@@ -31,8 +36,10 @@ import com.solacesystems.jcsmp.JCSMPFactory;
 import com.solacesystems.jcsmp.JCSMPTransportException;
 import com.solacesystems.jcsmp.Queue;
 import com.solacesystems.jcsmp.SDTMap;
+import com.solacesystems.jcsmp.XMLMessage;
 import com.solacesystems.jcsmp.XMLMessageListener;
 import com.solacesystems.jcsmp.XMLMessageProducer;
+import com.solacesystems.jcsmp.impl.TextMessageImpl;
 
 public class CustomMsgSelectorsOnQueue extends SampleApp {
 	Consumer cons = null;
@@ -62,7 +69,29 @@ public class CustomMsgSelectorsOnQueue extends SampleApp {
 		}
 
 		public void onReceive(BytesXMLMessage message) {
-			System.out.println("\n======== Received message ======== \n" + message.dump());
+			//System.out.println("\n======== Received message ======== \n" + message.dump());
+			StringBuffer sb = new StringBuffer();
+			System.out.println(message.dump(XMLMessage.MSGDUMP_BRIEF));
+			sb.append(message.dump(XMLMessage.MSGDUMP_BRIEF));
+			String queueData = "";
+			if(message instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
+				System.out.println("Queue data: " + new String(((TextMessageImpl)message).getText()));						
+				queueData = new String(((TextMessageImpl)message).getText());
+			}else if(message instanceof com.solacesystems.jcsmp.BytesMessage){
+				System.out.println("Queue data: " + new String(((BytesMessage)message).getData()));						
+				queueData = new String(((BytesMessage)message).getData());
+			}
+			sb.append("content: " + queueData);
+			sb.append("\n-----------------------------------------------------------\n\n");
+			// Write to a file
+			String filePath = "q_read_content.dat";			
+			String fileContent = sb.toString();
+			try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+				writer.write(fileContent);
+				System.out.println("Successfully wrote to the file.");
+			} catch (IOException e) {
+				System.err.println("An error occurred while writing to the file: " + e.getMessage());
+			}			
 		}
 	}
 	
