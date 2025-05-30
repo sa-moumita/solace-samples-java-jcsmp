@@ -136,6 +136,7 @@ public class CustomQueueBrowse extends SampleApp {
 			BytesXMLMessage rx_msg = null;
 			//JSONArray jsonArray = new JSONArray();
 			StringBuffer sb = new StringBuffer();
+			int count = 0;
 			do {
 				rx_msg = myBrowser.getNext();
 				if(rx_msg != null){
@@ -162,13 +163,14 @@ public class CustomQueueBrowse extends SampleApp {
 					//json.put("queueData", queueData);
 					sb.append("content: " + queueData);
 					sb.append("\n-----------------------------------------------------------\n\n");
+					count = count + 1;
 					//jsonArray.put(json);
 							
 					//System.out.println("Browser got message... dumping: END");
 				}
 			} while (rx_msg != null);
 			System.out.println("Finished browsing.");
-			
+			sb.append("\n\nTotal number of Messages browsed: " + String.valueOf(count));
 			//System.out.println( jsonArray.toString(2));
 			// Write to a file
 			String filePath = "q_browse_content.dat";
