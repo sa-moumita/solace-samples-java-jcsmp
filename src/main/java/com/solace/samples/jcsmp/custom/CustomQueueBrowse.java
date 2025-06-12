@@ -1,16 +1,9 @@
 /**
  * CustomQueueBrowse.java
- *
- * This sample shows how to provision an endpoint (in this case a 
- * Queue) on the appliance, then how to use a Browser to browse the Queue's contents. 
- * Every message received through the Browser interface is dumped to screen 
- * using the XMLMessage.dump() convenience function for review.
  * 
- * On the publishing side, this sample shows the use of 
- * Producer-Independent Messages, which can be reused and resent multiple times 
- * with different data payloads.
+ * This class will browse messages from a queue based on given key-value pair or all the messages
+ * Developed by Moumita Saha (msaha2@its.jnj.com)
  * 
- * Copyright 2009-2022 Solace Corporation. All rights reserved.
  */
 
 package com.solace.samples.jcsmp.custom;
