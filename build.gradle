@@ -127,7 +127,8 @@ def scripts = [
     'GuaranteedSubscriberWithSettle':'com.solace.samples.jcsmp.patterns.GuaranteedSubscriberWithSettle',
     'dtDirectSubscriber':'com/solace/samples/jcsmp/features/distributedtracing/DirectSubscriberWithManualInstrumentation',
     'CustomQueueBrowse': 'com.solace.samples.jcsmp.custom.CustomQueueBrowse',
-    'CustomMsgSelectorsOnQueue': 'com.solace.samples.jcsmp.custom.CustomMsgSelectorsOnQueue'
+    'CustomMsgSelectorsOnQueue': 'com.solace.samples.jcsmp.custom.CustomMsgSelectorsOnQueue',
+    'CustomQueueContentMover': 'com.solace.samples.jcsmp.custom.CustomQueueContentMover'
 ]
 // for each of those array entries, let's make a start script
 scripts.each() { scriptName, className ->
