@@ -1,18 +1,9 @@
 /**
  * CustomMsgSelectorsOnQueue.java
  * 
- * This sample shows how to create a message Flow to a Queue, using a 
- * message selector to select which messages should be delivered.
+ * This class will read message from a queue based on given key-value pair
+ * Developed by Moumita Saha (msaha2@its.jnj.com)
  * 
- * This sample will:
- * - Create and bind a Flow to a temporary Queue with a message selector on a 
- *   user-defined property.
- * - Publish a number of Guaranteed messages with the given user-defined 
- *   property to the temporary Queue.
- * - Show that messages matching the registered selector are delivered to 
- *   the temporary Queue Flow.
- *   
- * Copyright 2009-2022 Solace Corporation. All rights reserved.
  */
 
 package com.solace.samples.jcsmp.custom;
