@@ -1,3 +1,11 @@
+/**
+ * CustomQueueContentMover.java
+ * 
+ * This class will read message from a queue based on given key-value pair and send the content to the target queue
+ * Developed by Moumita Saha (msaha2@its.jnj.com)
+ * 
+ */
+
 package com.solace.samples.jcsmp.custom;
 
 import java.io.BufferedWriter;
