@@ -19,6 +19,9 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 import com.solace.samples.jcsmp.features.common.ArgParser;
 import com.solace.samples.jcsmp.features.common.SampleApp;
@@ -102,19 +105,7 @@ public class CustomQueueBrowse extends SampleApp {
 			// Check capability to browse queues
 			checkCapability(CapabilityType.BROWSER);
 
-			/*
-			 * Provision a new Queue on the appliance, ignoring if it already
-			 * exists. Set permissions, access type, and provisioning flags.
-			 */
-			//EndpointProperties ep_provision = new EndpointProperties();
-			// Set permissions to allow all.
-			//ep_provision.setPermission(EndpointProperties.PERMISSION_CONSUME);
-			// Set access type to exclusive.
-			//ep_provision.setAccessType(EndpointProperties.ACCESSTYPE_EXCLUSIVE);
-			// Set Quota to 100 MB.
-			//ep_provision.setQuota(100);
-			//SA//String ep_qn = "sample_queue_ProvisionAndBrowse_" + String.valueOf(System.currentTimeMillis() % 10000);
-			//String ep_qn = "Q/poc/input";
+
 			String ep_qn = conf.getQueueName();
 			final String virtRouterName = (String) session.getProperty(JCSMPProperties.VIRTUAL_ROUTER_NAME);
 			System.out.printf("Router's virtual router name: '%s'\n", virtRouterName);
@@ -125,53 +116,79 @@ public class CustomQueueBrowse extends SampleApp {
 			 * Now browse messages on the Queue and selectively remove
 			 * them.
 			 */
-			BrowserProperties br_prop = new BrowserProperties();
+			StringBuffer sb = new StringBuffer();
+			String correlationValues = "";
+			int count = 0;
+			if((conf.getCorrelationKey() != null && !"".equals(conf.getCorrelationKey())) && 
+				(conf.getCorrelationValue() != null &&!"".equals(conf.getCorrelationValue()))){
+				correlationValues = conf.getCorrelationValue();
+			}
+			BrowserProperties br_prop = new BrowserProperties();				
 			br_prop.setEndpoint(ep_queue);
 			br_prop.setTransportWindowSize(1);
-			br_prop.setWaitTimeout(1000);
-			if(conf.getCorrelationKey() != null && !"".equals(conf.getCorrelationKey())){
-				br_prop.setSelector(conf.getCorrelationKey() + " = '" + conf.getCorrelationValue() + "'");
-			}		
-			Browser myBrowser = session.createBrowser(br_prop);
-			BytesXMLMessage rx_msg = null;
-			//JSONArray jsonArray = new JSONArray();
-			StringBuffer sb = new StringBuffer();
-			int count = 0;
-			do {
-				rx_msg = myBrowser.getNext();
-				if(rx_msg != null){
-					//System.out.println("Browser got message... dumping: START");
-					//JSONObject json = new JSONObject();
-					System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
-					sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
-					
-					//System.out.println(rx_msg.getMessageId());					
-					//System.out.println(rx_msg.getCorrelationId());
-					//System.out.println(rx_msg.getAttachmentContentLength());
-					String queueData = "";
-					if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
-						System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
-						queueData = new String(((TextMessageImpl)rx_msg).getText());
-					}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
-						System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
-						queueData = new String(((BytesMessage)rx_msg).getData());
-					}	
-					
-					//json.put("messageId", rx_msg.getMessageId());
-					//json.put("correlationId", rx_msg.getCorrelationId());
-					//json.put("attachmentLength", rx_msg.getAttachmentContentLength());
-					//json.put("queueData", queueData);
-					sb.append("content: " + queueData);
-					sb.append("\n-----------------------------------------------------------\n\n");
-					count = count + 1;
-					//jsonArray.put(json);
-							
-					//System.out.println("Browser got message... dumping: END");
-				}
-			} while (rx_msg != null);
+			br_prop.setWaitTimeout(1000);			
+			if(!"".equals(correlationValues)){
+				String[] elements = correlationValues.split(",\\s*");
+				List<String> list = Arrays.asList(elements);
+				Iterator<String> iterator = list.iterator();			
+				while(iterator.hasNext()){
+					String correlationValue = iterator.next();					
+					br_prop.setSelector(conf.getCorrelationKey() + " = '" + correlationValue + "'");
+					Browser myBrowser = session.createBrowser(br_prop);
+					BytesXMLMessage rx_msg = null;
+					do {
+						rx_msg = myBrowser.getNext();
+						if(rx_msg != null){
+							//System.out.println("Browser got message... dumping: START");
+							//JSONObject json = new JSONObject();
+							System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+							sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+							String queueData = "";
+							if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
+								System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
+								queueData = new String(((TextMessageImpl)rx_msg).getText());
+							}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
+								System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
+								queueData = new String(((BytesMessage)rx_msg).getData());
+							}	
+							sb.append("content: " + queueData);
+							sb.append("\n-----------------------------------------------------------\n\n");
+							count = count + 1;
+						}
+					} while (rx_msg != null);
+					rx_msg = null;
+					// Close the Browser.
+					myBrowser.close();	
+				}							
+			}else{
+				Browser myBrowser = session.createBrowser(br_prop);
+				BytesXMLMessage rx_msg = null;
+				do {
+					rx_msg = myBrowser.getNext();
+					if(rx_msg != null){
+						//System.out.println("Browser got message... dumping: START");
+						//JSONObject json = new JSONObject();
+						System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+						sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+						String queueData = "";
+						if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
+							System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
+							queueData = new String(((TextMessageImpl)rx_msg).getText());
+						}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
+							System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
+							queueData = new String(((BytesMessage)rx_msg).getData());
+						}	
+						sb.append("content: " + queueData);
+						sb.append("\n-----------------------------------------------------------\n\n");
+						count = count + 1;
+					}
+				} while (rx_msg != null);
+				rx_msg = null;
+				// Close the Browser.
+				myBrowser.close();					
+			}
 			System.out.println("Finished browsing.");
 			sb.append("\n\nTotal number of Messages browsed: " + String.valueOf(count));
-			//System.out.println( jsonArray.toString(2));
 			// Write to a file
 			String filePath = "q_browse_content.dat";
 			//String fileContent = jsonArray.toString(2);
@@ -184,11 +201,12 @@ public class CustomQueueBrowse extends SampleApp {
 				System.err.println("An error occurred while writing to the file: " + e.getMessage());
 			}
 			
-			// Close the Browser.
-			myBrowser.close();			
+					
 			System.out.println("OK");
 
 			finish(0);
+							
+			
 		} catch (JCSMPTransportException ex) {
 			System.err.println("Encountered a JCSMPTransportException, closing session... " + ex.getMessage());
 			if (prod != null) {
