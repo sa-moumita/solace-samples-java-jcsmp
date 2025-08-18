@@ -138,13 +138,13 @@ public class CustomQueueBrowse extends SampleApp {
 							sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
 							String queueData = "";
 							if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
-								System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
+								//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
 								queueData = new String(((TextMessageImpl)rx_msg).getText());
 							}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
-								System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
+								//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
 								queueData = new String(((BytesMessage)rx_msg).getData());
 							}	
-							sb.append("content: " + queueData);
+							//sb.append("content: " + queueData);
 							sb.append("\n-----------------------------------------------------------\n\n");
 							count = count + 1;
 						}
@@ -165,13 +165,13 @@ public class CustomQueueBrowse extends SampleApp {
 						sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
 						String queueData = "";
 						if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
-							System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
+							//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
 							queueData = new String(((TextMessageImpl)rx_msg).getText());
 						}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
-							System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
+							//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
 							queueData = new String(((BytesMessage)rx_msg).getData());
 						}	
-						sb.append("content: " + queueData);
+						//sb.append("content: " + queueData);
 						sb.append("\n-----------------------------------------------------------\n\n");
 						count = count + 1;
 					}

@@ -39,6 +39,7 @@ public class SessionConfiguration {
 	private String queueName;
 	private String correlationKey;
 	private String correlationValue;
+	private String targetQueueName;
 
 	public String getCorrelationKey() {
 		return correlationKey;
@@ -55,6 +56,13 @@ public class SessionConfiguration {
 	public void setCorrelationValue(String correlationValue) {
 		this.correlationValue = correlationValue;
 	}
+	public String getTargetQueueName() {
+		return targetQueueName;
+	}
+
+	public void setTargetQueueName(String targetQueueName) {
+		this.targetQueueName = targetQueueName;
+	}	
 
 	public String getQueueName() {
 		return queueName;

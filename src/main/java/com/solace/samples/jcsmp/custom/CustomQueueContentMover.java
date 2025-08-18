@@ -116,9 +116,18 @@ public class CustomQueueContentMover extends SampleApp {
 			 * Now browse messages on the Queue and selectively remove
 			 * them.
 			 */
-			String tqName = "";
+			String tqName = conf.getTargetQueueName();
+			String[] tqList = null;
 			boolean isQueueNameError = false;
 			StringBuffer sb = new StringBuffer();
+
+			if(tqName!= null && !"".equals(tqName)){
+				tqName=tqName.replaceAll("[ ]", "");
+				tqList = tqName.split(",", 0);
+			}else{
+				sb.append("ERROR! Atlest one Target Queue name should be provided while moving queue content. \n");
+				isQueueNameError = true;
+			}					
 			if(ep_qn.startsWith("dmq")){
 				tqName = ep_qn.substring(2);
 			}else{
@@ -126,8 +135,7 @@ public class CustomQueueContentMover extends SampleApp {
 				isQueueNameError = true;
 			}
 			
-			if(!isQueueNameError){			
-				Queue tq_queue = JCSMPFactory.onlyInstance().createQueue(tqName);			
+			if(!isQueueNameError){						
 				String correlationValues = "";
 				int count = 0;
 				if((conf.getCorrelationKey() != null && !"".equals(conf.getCorrelationKey())) && 
@@ -177,12 +185,15 @@ public class CustomQueueContentMover extends SampleApp {
 								m.setDeliveryMode(DeliveryMode.PERSISTENT);
 								m.setCorrelationId(correlationValue);
 								m.writeAttachment(queueData.getBytes());
-								prod.send(m, tq_queue);
-								//System.out.println("Binding to Source endpoint (queue) to delete: " + ep_queue);							
-								cons.start();
-								// Will receive and print any messages.
-								Thread.sleep(500);	
-								sb.append("CorrelationId: " + correlationValue + " -- Successfully moved to target queue " + tqName + "\n");
+								for( String tq : tqList){
+									Queue tq_queue = JCSMPFactory.onlyInstance().createQueue(tq);			
+									prod.send(m, tq_queue);
+									//System.out.println("Binding to Source endpoint (queue) to delete: " + ep_queue);							
+									cons.start();
+									// Will receive and print any messages.
+									Thread.sleep(500);	
+									sb.append("CorrelationId: " + correlationValue + " -- Successfully moved to target queue " + tq + "\n");
+								}
 								counter++;					
 							}else{
 								if(counter == 0){

@@ -83,6 +83,9 @@ public class ArgParser {
                 }else if (args[i].equals("-v")) {
 					i++;
 					sc.setCorrelationValue(args[i]);		                    		
+                }else if (args[i].equals("-tq")) {
+					i++;
+					sc.setTargetQueueName(args[i]);		
                 } else if (args[i].equals("-t")) {
 					i++;
 					String dm = args[i].toLowerCase();
