@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import com.solace.samples.jcsmp.features.common.ArgParser;
 import com.solace.samples.jcsmp.features.common.SampleApp;
@@ -31,7 +34,7 @@ import com.solacesystems.jcsmp.DeliveryMode;
 import com.solacesystems.jcsmp.JCSMPException;
 import com.solacesystems.jcsmp.JCSMPFactory;
 import com.solacesystems.jcsmp.JCSMPProperties;
-
+import com.solacesystems.jcsmp.JCSMPStreamingPublishCorrelatingEventHandler;
 import com.solacesystems.jcsmp.JCSMPTransportException;
 import com.solacesystems.jcsmp.Queue;
 import com.solacesystems.jcsmp.XMLMessageProducer;
@@ -48,6 +51,10 @@ public class CustomQueueContentMover extends SampleApp {
 	XMLMessageProducer prod = null;
 	SessionConfiguration conf = null;
 	Consumer cons = null;
+	
+	private CountDownLatch publishLatch;
+    private volatile boolean publishSuccess = false;
+    private volatile String errorMessage = null;
 
 	void createSession(String[] args) {
 		ArgParser parser = new ArgParser();
@@ -99,7 +106,45 @@ public class CustomQueueContentMover extends SampleApp {
 		try {
 			// Connects the Session and acquires a message producer.
 	        session.connect();
-			prod = session.getMessageProducer(new PrintingPubCallback());
+			////prod = session.getMessageProducer(new PrintingPubCallback());
+			prod = session.getMessageProducer(
+                new JCSMPStreamingPublishCorrelatingEventHandler() {
+
+					@Override
+					public void responseReceived(String messageID) {
+						System.out.println("Producer received response for msg: " + messageID);
+					}
+
+        			@Override
+        			public void responseReceivedEx(Object key) {
+                        System.out.println("Producer received response for msg: " + key.toString());
+						publishSuccess = true;
+						if (publishLatch != null) {
+							publishLatch.countDown();
+						}
+        			}
+
+					@Override
+					public void handleError(String messageID, JCSMPException e, long timestamp) {
+						System.err.println("Producer received error for msg: " + messageID);
+						publishSuccess = false;
+						errorMessage = e.getMessage();
+						if (publishLatch != null) {
+							publishLatch.countDown();
+						}
+					}		
+
+        			@Override
+        			public void handleErrorEx(Object key, JCSMPException cause, long timestamp) {
+                        System.out.printf("Producer received error for msg: %s@%s - %s%n", key.toString(), timestamp, cause);
+						//throw new RuntimeException(cause);
+						publishSuccess = false;
+						errorMessage = cause.getMessage();
+						if (publishLatch != null) {
+							publishLatch.countDown();
+						}						
+        			}
+                });
 
 			// Check capability to provision endpoints
 			checkCapability(CapabilityType.ENDPOINT_MANAGEMENT);
@@ -184,15 +229,36 @@ public class CustomQueueContentMover extends SampleApp {
 								BytesXMLMessage m = JCSMPFactory.onlyInstance().createMessage(BytesXMLMessage.class);
 								m.setDeliveryMode(DeliveryMode.PERSISTENT);
 								m.setCorrelationId(correlationValue);
+								m.setCorrelationKey(m);  // correlation key for receiving ACKs
 								m.writeAttachment(queueData.getBytes());
 								for( String tq : tqList){
-									Queue tq_queue = JCSMPFactory.onlyInstance().createQueue(tq);			
+									Queue tq_queue = JCSMPFactory.onlyInstance().createQueue(tq);	
+									publishLatch = new CountDownLatch(1);
+									publishSuccess = false;
+									errorMessage = null;	
+									int timeoutMs = 5000; // 5 seconds timeout	
 									prod.send(m, tq_queue);
-									//System.out.println("Binding to Source endpoint (queue) to delete: " + ep_queue);							
-									cons.start();
-									// Will receive and print any messages.
-									Thread.sleep(500);	
-									sb.append("CorrelationId: " + correlationValue + " -- Successfully moved to target queue " + tq + "\n");
+									// Wait for acknowledgment
+									boolean completed = publishLatch.await(timeoutMs, TimeUnit.MILLISECONDS);
+									
+									if (!completed) {
+										//throw new TimeoutException("Message publish timeout after " + timeoutMs + "ms");
+										sb.append("CorrelationId: " + correlationValue + " -- Failed publish to target queue " + tq + " due to publish timeout after " + timeoutMs + "ms" + "\n");
+										publishSuccess = false;
+									}
+									
+									if (!publishSuccess) {
+										//throw new Exception("Failed to publish message: " + errorMessage);
+										sb.append("CorrelationId: " + correlationValue + " -- Failed publish to target queue " + tq + " due to " + errorMessage +"\n");
+									}
+									if(publishSuccess){
+										System.out.println("Sent Message ID: " + m.getMessageId() + " to Target Queue: " + tq);
+										System.out.println("Binding to Source endpoint (queue) to delete: " + ep_queue);
+										cons.start();
+										// Will receive and print any messages.
+										Thread.sleep(500);	
+										sb.append("CorrelationId: " + correlationValue + " -- Successfully moved to target queue " + tq + "\n");
+									}
 								}
 								counter++;					
 							}else{
