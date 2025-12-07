@@ -145,7 +145,7 @@ public class CustomQueueBrowse extends SampleApp {
 								queueData = new String(((BytesMessage)rx_msg).getData());
 							}	
 							//sb.append("content: " + queueData);
-							sb.append("\n-----------------------------------------------------------\n\n");
+							sb.append("\n-----------------------------------------------------------\n\n");							
 							count = count + 1;
 						}
 					} while (rx_msg != null);
@@ -161,7 +161,7 @@ public class CustomQueueBrowse extends SampleApp {
 					if(rx_msg != null){
 						//System.out.println("Browser got message... dumping: START");
 						//JSONObject json = new JSONObject();
-						System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+						System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));						
 						sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
 						String queueData = "";
 						if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
@@ -172,7 +172,7 @@ public class CustomQueueBrowse extends SampleApp {
 							queueData = new String(((BytesMessage)rx_msg).getData());
 						}	
 						//sb.append("content: " + queueData);
-						sb.append("\n-----------------------------------------------------------\n\n");
+						sb.append("\n-----------------------------------------------------------\n\n");						
 						count = count + 1;
 					}
 				} while (rx_msg != null);

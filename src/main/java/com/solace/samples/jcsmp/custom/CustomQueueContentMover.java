@@ -212,7 +212,7 @@ public class CustomQueueContentMover extends SampleApp {
 							if(rx_msg != null){
 								//System.out.println("Browser got message... dumping: START");
 								//JSONObject json = new JSONObject();
-								//System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+								//System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));								
 								//sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
 								String queueData = "";
 								if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
@@ -231,11 +231,20 @@ public class CustomQueueContentMover extends SampleApp {
 								m.setCorrelationId(correlationValue);
 								m.setCorrelationKey(m);  // correlation key for receiving ACKs
 								m.writeAttachment(queueData.getBytes());
+								m.setPriority(rx_msg.getPriority());
+								m.setDMQEligible(rx_msg.isDMQEligible());
+								String appMsgId = rx_msg.getApplicationMessageId();								
+								if(appMsgId != null && !"".equals(appMsgId)){
+									m.setApplicationMessageId(appMsgId);
+								}
+								// Copy All properties
+								m.setProperties(rx_msg.getProperties());
 								for( String tq : tqList){
 									Queue tq_queue = JCSMPFactory.onlyInstance().createQueue(tq);	
 									publishLatch = new CountDownLatch(1);
 									publishSuccess = false;
 									errorMessage = null;	
+									boolean deleteFromSourceQueue = true;
 									int timeoutMs = 5000; // 5 seconds timeout	
 									prod.send(m, tq_queue);
 									// Wait for acknowledgment
@@ -244,14 +253,15 @@ public class CustomQueueContentMover extends SampleApp {
 									if (!completed) {
 										//throw new TimeoutException("Message publish timeout after " + timeoutMs + "ms");
 										sb.append("CorrelationId: " + correlationValue + " -- Failed publish to target queue " + tq + " due to publish timeout after " + timeoutMs + "ms" + "\n");
-										publishSuccess = false;
+										deleteFromSourceQueue = false;
 									}
 									
 									if (!publishSuccess) {
 										//throw new Exception("Failed to publish message: " + errorMessage);
 										sb.append("CorrelationId: " + correlationValue + " -- Failed publish to target queue " + tq + " due to " + errorMessage +"\n");
+										deleteFromSourceQueue = false;
 									}
-									if(publishSuccess){
+									if(deleteFromSourceQueue){
 										System.out.println("Sent Message ID: " + m.getMessageId() + " to Target Queue: " + tq);
 										System.out.println("Binding to Source endpoint (queue) to delete: " + ep_queue);
 										cons.start();
