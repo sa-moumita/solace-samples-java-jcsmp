@@ -203,7 +203,7 @@ public class SampleUtils {
 			// Create session from JCSMPProperties. Validation is performed by
 			// the API and it throws InvalidPropertiesException upon failure.
 			System.out.println("About to create session.");
-			System.out.println("Configuration: " + sc.toString());
+			//System.out.println("Configuration: " + sc.toString());
 			session = JCSMPFactory.onlyInstance().createSession(properties, null, evtHdlr);
 			return session;
 		} catch (InvalidPropertiesException ipe) {			
