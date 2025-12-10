@@ -103,6 +103,7 @@ public class CustomQueueContentMover extends SampleApp {
 
 	void run(String[] args) {
 		createSession(args);
+		StringBuffer sb = new StringBuffer();
 		try {
 			// Connects the Session and acquires a message producer.
 	        session.connect();
@@ -164,7 +165,7 @@ public class CustomQueueContentMover extends SampleApp {
 			String tqName = conf.getTargetQueueName();
 			String[] tqList = null;
 			boolean isQueueNameError = false;
-			StringBuffer sb = new StringBuffer();
+			
 
 			if(tqName!= null && !"".equals(tqName)){
 				tqName=tqName.replaceAll("[ ]", "");
@@ -313,19 +314,7 @@ public class CustomQueueContentMover extends SampleApp {
 				System.out.println("Finished browsing.");
 			}
 			//sb.append("\n\nTotal number of Messages browsed: " + String.valueOf(count));
-			// Write to a file
-			String filePath = "q_content_move_status.dat";
-			//String fileContent = jsonArray.toString(2);
-			String fileContent = sb.toString();
-
-			try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-				writer.write(fileContent);
-				System.out.println("Successfully wrote to the file.");
-			} catch (IOException e) {
-				System.err.println("An error occurred while writing to the file: " + e.getMessage());
-			}
-			
-					
+			writeToFile(sb.toString());		
 			//System.out.println("OK");
 
 			finish(0);
@@ -333,6 +322,7 @@ public class CustomQueueContentMover extends SampleApp {
 			
 		} catch (JCSMPTransportException ex) {
 			System.err.println("Encountered a JCSMPTransportException, closing session... " + ex.getMessage());
+			writeToFile(ex.getMessage());
 			if (prod != null) {
 				prod.close();
 				// At this point the producer handle is unusable, a new one
@@ -341,6 +331,7 @@ public class CustomQueueContentMover extends SampleApp {
 			finish(1);
 		} catch (JCSMPException ex) {
 			System.err.println("Encountered a JCSMPException, closing consumer channel... " + ex.getMessage());
+			writeToFile(ex.getMessage());
 			// Possible causes:
 			// - Authentication error: invalid username/password
 			// - Provisioning error: unable to add subscriptions from CSMP
@@ -353,9 +344,19 @@ public class CustomQueueContentMover extends SampleApp {
 			finish(1);
 		} catch (Exception ex) {
 			System.err.println("Encountered an Exception... " + ex.getMessage());
+			writeToFile(ex.getMessage());
 			finish(1);
 		}
-
+		
 	}
-
+	void writeToFile(String fileContent){
+		// Write to a file
+		String filePath = "q_content_move_status.dat";		
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+			writer.write(fileContent);
+			System.out.println("Successfully wrote to the file.");
+		} catch (IOException e) {
+			System.err.println("An error occurred while writing to the file: " + e.getMessage());
+		}		
+	}
 }

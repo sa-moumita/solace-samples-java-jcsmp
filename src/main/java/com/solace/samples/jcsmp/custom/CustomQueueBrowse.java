@@ -15,6 +15,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 
 import com.solace.samples.jcsmp.features.common.ArgParser;
 import com.solace.samples.jcsmp.features.common.SampleApp;
@@ -88,6 +90,7 @@ public class CustomQueueBrowse extends SampleApp {
 
 	void run(String[] args) {
 		createSession(args);
+		StringBuffer sb = new StringBuffer();
 		try {
 			// Connects the Session and acquires a message producer.
 	        session.connect();
@@ -108,8 +111,7 @@ public class CustomQueueBrowse extends SampleApp {
 			/*
 			 * Now browse messages on the Queue and selectively remove
 			 * them.
-			 */
-			StringBuffer sb = new StringBuffer();
+			 */			
 			String correlationValues = "";
 			int count = 0;
 			if((conf.getCorrelationKey() != null && !"".equals(conf.getCorrelationKey())) && 
@@ -154,10 +156,13 @@ public class CustomQueueBrowse extends SampleApp {
 					myBrowser.close();	
 				}							
 			}else{
+				System.out.println("1");
 				Browser myBrowser = session.createBrowser(br_prop);
+				System.out.println("2");
 				BytesXMLMessage rx_msg = null;
 				do {
 					rx_msg = myBrowser.getNext();
+					System.out.println("3");
 					if(rx_msg != null){
 						//System.out.println("Browser got message... dumping: START");
 						//JSONObject json = new JSONObject();
@@ -181,27 +186,17 @@ public class CustomQueueBrowse extends SampleApp {
 				myBrowser.close();					
 			}
 			System.out.println("Finished browsing.");
-			sb.append("\n\nTotal number of Messages browsed: " + String.valueOf(count));
-			// Write to a file
-			String filePath = "q_browse_content.dat";
-			//String fileContent = jsonArray.toString(2);
-			String fileContent = sb.toString();
-
-			try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-				writer.write(fileContent);
-				System.out.println("Successfully wrote to the file.");
-			} catch (IOException e) {
-				System.err.println("An error occurred while writing to the file: " + e.getMessage());
-			}
-			
-					
+			sb.append("\n\nTotal number of Messages browsed: " + String.valueOf(count));			
 			System.out.println("OK");
+
+			writeToFile(sb.toString());
 
 			finish(0);
 							
 			
 		} catch (JCSMPTransportException ex) {
 			System.err.println("Encountered a JCSMPTransportException, closing session... " + ex.getMessage());
+			writeToFile(ex.getMessage());
 			if (prod != null) {
 				prod.close();
 				// At this point the producer handle is unusable, a new one
@@ -210,6 +205,7 @@ public class CustomQueueBrowse extends SampleApp {
 			finish(1);
 		} catch (JCSMPException ex) {
 			System.err.println("Encountered a JCSMPException, closing consumer channel... " + ex.getMessage());
+			writeToFile(ex.getMessage());
 			// Possible causes:
 			// - Authentication error: invalid username/password
 			// - Provisioning error: unable to add subscriptions from CSMP
@@ -221,10 +217,27 @@ public class CustomQueueBrowse extends SampleApp {
 			}
 			finish(1);
 		} catch (Exception ex) {
-			System.err.println("Encountered an Exception... " + ex.getMessage());
+			System.err.println("Encountered an Exception... " + ex.getMessage());			
+			writeToFile(ex.getMessage());			
 			finish(1);
-		}
-
+		}								
 	}
 
+	void writeToFile(String fileContent){
+		// Write to a file
+		String filePath = "q_browse_content.dat";		
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+			writer.write(fileContent);
+			System.out.println("Successfully wrote to the file.");
+		} catch (IOException e) {
+			System.err.println("An error occurred while writing to the file: " + e.getMessage());
+		}		
+	}
+
+	String getStackTrace(Exception ex){
+		StringWriter sw = new StringWriter();
+    	PrintWriter pw = new PrintWriter(sw);
+    	ex.printStackTrace(pw);
+		return sw.toString();
+	}
 }
