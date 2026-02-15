@@ -148,7 +148,7 @@ public class CustomQueueBrowse extends SampleApp {
 							}else{
 								sb.append(rx_msg);
 							}	
-							//sb.append("content: " + queueData);
+							sb.append("Content: " + queueData);
 							sb.append("\n-----------------------------------------------------------\n\n");							
 							count = count + 1;
 						}
@@ -175,7 +175,7 @@ public class CustomQueueBrowse extends SampleApp {
 							//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
 							queueData = new String(((BytesMessage)rx_msg).getData());
 						}	
-						//sb.append("content: " + queueData);
+						sb.append("Content: " + queueData);
 						sb.append("\n-----------------------------------------------------------\n\n");						
 						count = count + 1;
 					}
