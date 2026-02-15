@@ -141,10 +141,12 @@ public class CustomQueueBrowse extends SampleApp {
 							String queueData = "";
 							if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
 								//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
-								queueData = new String(((TextMessageImpl)rx_msg).getText());
+								queueData = new String(((TextMessageImpl)rx_msg).getText());								
 							}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
 								//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
-								queueData = new String(((BytesMessage)rx_msg).getData());
+								queueData = new String(((BytesMessage)rx_msg).getData());								
+							}else{
+								sb.append(rx_msg);
 							}	
 							//sb.append("content: " + queueData);
 							sb.append("\n-----------------------------------------------------------\n\n");							
@@ -155,14 +157,11 @@ public class CustomQueueBrowse extends SampleApp {
 					// Close the Browser.
 					myBrowser.close();	
 				}							
-			}else{
-				System.out.println("1");
-				Browser myBrowser = session.createBrowser(br_prop);
-				System.out.println("2");
+			}else{				
+				Browser myBrowser = session.createBrowser(br_prop);				
 				BytesXMLMessage rx_msg = null;
 				do {
-					rx_msg = myBrowser.getNext();
-					System.out.println("3");
+					rx_msg = myBrowser.getNext();					
 					if(rx_msg != null){
 						//System.out.println("Browser got message... dumping: START");
 						//JSONObject json = new JSONObject();
@@ -218,7 +217,7 @@ public class CustomQueueBrowse extends SampleApp {
 			finish(1);
 		} catch (Exception ex) {
 			System.err.println("Encountered an Exception... " + ex.getMessage());			
-			writeToFile(ex.getMessage());			
+			writeToFile(ex.getMessage());
 			finish(1);
 		}								
 	}

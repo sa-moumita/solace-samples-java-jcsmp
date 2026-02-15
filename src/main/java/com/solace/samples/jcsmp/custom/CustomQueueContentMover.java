@@ -216,22 +216,25 @@ public class CustomQueueContentMover extends SampleApp {
 								//System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));								
 								//sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
 								String queueData = "";
+								BytesXMLMessage m = JCSMPFactory.onlyInstance().createMessage(BytesXMLMessage.class);
 								if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
 									//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
 									queueData = new String(((TextMessageImpl)rx_msg).getText());
+									m.writeAttachment(queueData.getBytes());
 								}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
 									//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
 									queueData = new String(((BytesMessage)rx_msg).getData());
+									m.writeAttachment(((BytesMessage)rx_msg).getData());
 								}	
 								//sb.append("content: " + queueData);
 								//sb.append("\n-----------------------------------------------------------\n\n");
 								count = count + 1;
 								// Publish Data to queue
-								BytesXMLMessage m = JCSMPFactory.onlyInstance().createMessage(BytesXMLMessage.class);
+								
 								m.setDeliveryMode(DeliveryMode.PERSISTENT);
 								m.setCorrelationId(correlationValue);
 								m.setCorrelationKey(m);  // correlation key for receiving ACKs
-								m.writeAttachment(queueData.getBytes());
+								//m.writeAttachment(queueData.getBytes());
 								m.setPriority(rx_msg.getPriority());
 								m.setDMQEligible(rx_msg.isDMQEligible());
 								String appMsgId = rx_msg.getApplicationMessageId();								
