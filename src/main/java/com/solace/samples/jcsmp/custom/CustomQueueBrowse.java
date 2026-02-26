@@ -12,6 +12,10 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -34,7 +38,10 @@ import com.solacesystems.jcsmp.JCSMPProperties;
 import com.solacesystems.jcsmp.JCSMPSession;
 import com.solacesystems.jcsmp.JCSMPTransportException;
 import com.solacesystems.jcsmp.Queue;
+import com.solacesystems.jcsmp.SDTException;
 import com.solacesystems.jcsmp.XMLMessageProducer;
+import com.solacesystems.jcsmp.SDTMap;
+import com.solacesystems.jcsmp.SDTException;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -137,7 +144,49 @@ public class CustomQueueBrowse extends SampleApp {
 							//System.out.println("Browser got message... dumping: START");
 							//JSONObject json = new JSONObject();
 							System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
-							sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+							sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));												
+							String appMsgId = rx_msg.getApplicationMessageId();								
+							SDTMap map = rx_msg.getProperties();
+							if (map != null) {
+								for (String key : map.keySet()) {
+									try {
+										Object value = map.get(key);
+										System.out.println(String.format("%-39s %s%n", key + ":", value));									
+										sb.append(String.format("%-39s %s%n", key + ":", value));
+									} catch (SDTException e) {
+										System.err.println("Error reading key: " + key + " - " + e.getMessage());
+									}
+								}
+							}
+						System.out.println(String.format("%-39s %s%n","Sequence Number:", rx_msg.getSequenceNumber()));
+						sb.append(String.format("%-39s %s%n","Sequence Number:", rx_msg.getSequenceNumber()));						
+						System.out.println(String.format("%-39s %s%n","SenderId:", rx_msg.getSenderId()));						
+						sb.append(String.format("%-39s %s%n","SenderId:", rx_msg.getSenderId()));						
+						System.out.println(String.format("%-39s %s%n","Topic Sequence Number:", rx_msg.getTopicSequenceNumber()));
+						sb.append(String.format("%-39s %s%n","Topic Sequence Number:", rx_msg.getTopicSequenceNumber())	);
+							Long senderTimestamp = rx_msg.getSenderTimestamp();
+							if (senderTimestamp != null) {
+								Instant instant = Instant.ofEpochMilli(senderTimestamp);
+								ZonedDateTime dateTime = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault());
+								DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
+								System.out.println(String.format("%-39s %s%n","Sent at:", dateTime.format(formatter)));
+								sb.append(String.format("%-39s %s%n","Sent at:", dateTime.format(formatter)));
+							} else {
+								System.out.println(String.format("%-39s %s%n","Sent at:", "null"));
+								sb.append(String.format("%-39s %s%n","Sent at:", "null" ));
+							}
+
+							long timeToLiveMs = rx_msg.getTimeToLive();
+							if (timeToLiveMs > 0) {
+								long expiryTimestamp = System.currentTimeMillis() + timeToLiveMs;
+								Instant expiryInstant = Instant.ofEpochMilli(expiryTimestamp);
+								System.out.println(String.format("%-39s %s%n","Expiry Time:", expiryInstant));
+								sb.append(String.format("%-39s %s%n","Expiry Time:", expiryInstant));
+							} else {
+								System.out.println("Message has no expiry (TTL is 0 or not set).");
+								sb.append("Message has no expiry (TTL is 0 or not set)." + "\n");
+							}																											
+
 							String queueData = "";
 							if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
 								//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
@@ -166,7 +215,49 @@ public class CustomQueueBrowse extends SampleApp {
 						//System.out.println("Browser got message... dumping: START");
 						//JSONObject json = new JSONObject();
 						System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));						
-						sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+						sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));						
+						//System.out.println("correlationValue", correlationValue);						
+						String appMsgId = rx_msg.getApplicationMessageId();								
+						SDTMap map = rx_msg.getProperties();
+						if (map != null) {
+							for (String key : map.keySet()) {
+								try {
+									Object value = map.get(key);
+									System.out.println(String.format("%-39s %s%n", key + ":", value));									
+									sb.append(String.format("%-39s %s%n", key + ":", value));
+								} catch (SDTException e) {
+									System.err.println("Error reading key: " + key + " - " + e.getMessage());
+								}
+							}
+						}
+						System.out.println(String.format("%-39s %s%n","Sequence Number:", rx_msg.getSequenceNumber()));
+						sb.append(String.format("%-39s %s%n","Sequence Number:", rx_msg.getSequenceNumber()));						
+						System.out.println(String.format("%-39s %s%n","SenderId:", rx_msg.getSenderId()));						
+						sb.append(String.format("%-39s %s%n","SenderId:", rx_msg.getSenderId()));						
+						System.out.println(String.format("%-39s %s%n","Topic Sequence Number:", rx_msg.getTopicSequenceNumber()));
+						sb.append(String.format("%-39s %s%n","Topic Sequence Number:", rx_msg.getTopicSequenceNumber())	);
+						Long senderTimestamp = rx_msg.getSenderTimestamp();
+						if (senderTimestamp != null) {
+							Instant instant = Instant.ofEpochMilli(senderTimestamp);
+							ZonedDateTime dateTime = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault());
+							DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
+							System.out.println(String.format("%-39s %s%n","Sent at:", dateTime.format(formatter)));
+							sb.append(String.format("%-39s %s%n","Sent at:", dateTime.format(formatter)));
+						} else {
+							System.out.println(String.format("%-39s %s%n","Sent at:", "null"));
+							sb.append(String.format("%-39s %s%n","Sent at:", "null"));
+						}
+
+						long timeToLiveMs = rx_msg.getTimeToLive();
+						if (timeToLiveMs > 0) {
+							long expiryTimestamp = System.currentTimeMillis() + timeToLiveMs;
+							Instant expiryInstant = Instant.ofEpochMilli(expiryTimestamp);
+							System.out.println(String.format("%-39s %s%n","Expiry Time:", expiryInstant));
+							sb.append(String.format("%-39s %s%n","Expiry Time:", expiryInstant + "\n"));
+						} else {
+							System.out.println(String.format("%-39s %s%n","Message has no expiry (TTL is 0 or not set).", ""));
+							sb.append(String.format("%-39s %s%n","Message has no expiry (TTL is 0 or not set).", "\n"));
+						}																		
 						String queueData = "";
 						if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
 							//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
