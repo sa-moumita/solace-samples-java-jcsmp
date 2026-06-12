@@ -188,15 +188,20 @@ public class CustomQueueBrowse extends SampleApp {
 							}																											
 
 							String queueData = "";
-							if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
-								//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
-								queueData = new String(((TextMessageImpl)rx_msg).getText());								
-							}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
-								//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
-								queueData = new String(((BytesMessage)rx_msg).getData());								
-							}else{
-								sb.append(rx_msg);
-							}	
+							try{
+								if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
+									//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
+									queueData = new String(((TextMessageImpl)rx_msg).getText());								
+								}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
+									//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
+									queueData = new String(((BytesMessage)rx_msg).getData());								
+								}else{
+									sb.append(rx_msg);
+								}	
+							}catch(Exception ex){
+								System.out.println("Unexpected error processing queue message. " + ex.getMessage());
+								sb.append("Unexpected error processing queue message. " + ex.getMessage());
+							}
 							sb.append("Content: " + queueData);
 							sb.append("\n-----------------------------------------------------------\n\n");							
 							count = count + 1;
@@ -259,13 +264,18 @@ public class CustomQueueBrowse extends SampleApp {
 							sb.append(String.format("%-39s %s%n","Message has no expiry (TTL is 0 or not set).", "\n"));
 						}																		
 						String queueData = "";
-						if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
-							//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
-							queueData = new String(((TextMessageImpl)rx_msg).getText());
-						}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
-							//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
-							queueData = new String(((BytesMessage)rx_msg).getData());
-						}	
+						try{
+							if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
+								//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
+								queueData = new String(((TextMessageImpl)rx_msg).getText());
+							}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
+								//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
+								queueData = new String(((BytesMessage)rx_msg).getData());
+							}	
+						}catch(Exception ex){
+							System.out.println("Unexpected error processing queue message. " + ex.getMessage());
+							sb.append("Unexpected error processing queue message. " + ex.getMessage());
+						}
 						sb.append("Content: " + queueData);
 						sb.append("\n-----------------------------------------------------------\n\n");						
 						count = count + 1;
