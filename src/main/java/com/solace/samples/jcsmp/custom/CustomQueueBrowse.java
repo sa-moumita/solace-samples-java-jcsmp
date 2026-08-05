@@ -9,8 +9,11 @@
 package com.solace.samples.jcsmp.custom;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -19,8 +22,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.io.StringWriter;
 import java.io.PrintWriter;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.xml.sax.InputSource;
 
 import com.solace.samples.jcsmp.features.common.ArgParser;
 import com.solace.samples.jcsmp.features.common.SampleApp;
@@ -44,6 +54,7 @@ import com.solacesystems.jcsmp.SDTMap;
 import com.solacesystems.jcsmp.SDTException;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.solacesystems.jcsmp.BytesMessage;
@@ -132,158 +143,36 @@ public class CustomQueueBrowse extends SampleApp {
 			if(!"".equals(correlationValues)){
 				String[] elements = correlationValues.split(",\\s*");
 				List<String> list = Arrays.asList(elements);
-				Iterator<String> iterator = list.iterator();			
+				Iterator<String> iterator = list.iterator();
 				while(iterator.hasNext()){
-					String correlationValue = iterator.next();					
+					String correlationValue = iterator.next();
 					br_prop.setSelector(conf.getCorrelationKey() + " = '" + correlationValue + "'");
 					Browser myBrowser = session.createBrowser(br_prop);
 					BytesXMLMessage rx_msg = null;
 					do {
 						rx_msg = myBrowser.getNext();
 						if(rx_msg != null){
-							//System.out.println("Browser got message... dumping: START");
-							//JSONObject json = new JSONObject();
-							System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
-							sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));												
-							String appMsgId = rx_msg.getApplicationMessageId();								
-							SDTMap map = rx_msg.getProperties();
-							if (map != null) {
-								for (String key : map.keySet()) {
-									try {
-										Object value = map.get(key);
-										System.out.println(String.format("%-39s %s%n", key + ":", value));									
-										sb.append(String.format("%-39s %s%n", key + ":", value));
-									} catch (SDTException e) {
-										System.err.println("Error reading key: " + key + " - " + e.getMessage());
-									}
-								}
-							}
-						System.out.println(String.format("%-39s %s%n","Sequence Number:", rx_msg.getSequenceNumber()));
-						sb.append(String.format("%-39s %s%n","Sequence Number:", rx_msg.getSequenceNumber()));						
-						System.out.println(String.format("%-39s %s%n","SenderId:", rx_msg.getSenderId()));						
-						sb.append(String.format("%-39s %s%n","SenderId:", rx_msg.getSenderId()));						
-						System.out.println(String.format("%-39s %s%n","Topic Sequence Number:", rx_msg.getTopicSequenceNumber()));
-						sb.append(String.format("%-39s %s%n","Topic Sequence Number:", rx_msg.getTopicSequenceNumber())	);
-							Long senderTimestamp = rx_msg.getSenderTimestamp();
-							if (senderTimestamp != null) {
-								Instant instant = Instant.ofEpochMilli(senderTimestamp);
-								ZonedDateTime dateTime = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault());
-								DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
-								System.out.println(String.format("%-39s %s%n","Sent at:", dateTime.format(formatter)));
-								sb.append(String.format("%-39s %s%n","Sent at:", dateTime.format(formatter)));
-							} else {
-								System.out.println(String.format("%-39s %s%n","Sent at:", "null"));
-								sb.append(String.format("%-39s %s%n","Sent at:", "null" ));
-							}
-
-							long timeToLiveMs = rx_msg.getTimeToLive();
-							if (timeToLiveMs > 0) {
-								long expiryTimestamp = System.currentTimeMillis() + timeToLiveMs;
-								Instant expiryInstant = Instant.ofEpochMilli(expiryTimestamp);
-								System.out.println(String.format("%-39s %s%n","Expiry Time:", expiryInstant));
-								sb.append(String.format("%-39s %s%n","Expiry Time:", expiryInstant));
-							} else {
-								System.out.println("Message has no expiry (TTL is 0 or not set).");
-								sb.append("Message has no expiry (TTL is 0 or not set)." + "\n");
-							}																											
-
-							String queueData = "";
-							try{
-								if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
-									//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
-									queueData = new String(((TextMessageImpl)rx_msg).getText());								
-								}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
-									//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
-									queueData = new String(((BytesMessage)rx_msg).getData());								
-								}else{
-									sb.append(rx_msg);
-								}	
-							}catch(Exception ex){
-								System.out.println("Unexpected error processing queue message. " + ex.getMessage());
-								sb.append("Unexpected error processing queue message. " + ex.getMessage());
-							}
-							sb.append("Content: " + queueData);
-							sb.append("\n-----------------------------------------------------------\n\n");							
+							appendMessageDetails(rx_msg, sb);
 							count = count + 1;
 						}
 					} while (rx_msg != null);
 					rx_msg = null;
 					// Close the Browser.
-					myBrowser.close();	
-				}							
-			}else{				
-				Browser myBrowser = session.createBrowser(br_prop);				
+					myBrowser.close();
+				}
+			}else{
+				Browser myBrowser = session.createBrowser(br_prop);
 				BytesXMLMessage rx_msg = null;
 				do {
-					rx_msg = myBrowser.getNext();					
+					rx_msg = myBrowser.getNext();
 					if(rx_msg != null){
-						//System.out.println("Browser got message... dumping: START");
-						//JSONObject json = new JSONObject();
-						System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));						
-						sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));						
-						//System.out.println("correlationValue", correlationValue);						
-						String appMsgId = rx_msg.getApplicationMessageId();								
-						SDTMap map = rx_msg.getProperties();
-						if (map != null) {
-							for (String key : map.keySet()) {
-								try {
-									Object value = map.get(key);
-									System.out.println(String.format("%-39s %s%n", key + ":", value));									
-									sb.append(String.format("%-39s %s%n", key + ":", value));
-								} catch (SDTException e) {
-									System.err.println("Error reading key: " + key + " - " + e.getMessage());
-								}
-							}
-						}
-						System.out.println(String.format("%-39s %s%n","Sequence Number:", rx_msg.getSequenceNumber()));
-						sb.append(String.format("%-39s %s%n","Sequence Number:", rx_msg.getSequenceNumber()));						
-						System.out.println(String.format("%-39s %s%n","SenderId:", rx_msg.getSenderId()));						
-						sb.append(String.format("%-39s %s%n","SenderId:", rx_msg.getSenderId()));						
-						System.out.println(String.format("%-39s %s%n","Topic Sequence Number:", rx_msg.getTopicSequenceNumber()));
-						sb.append(String.format("%-39s %s%n","Topic Sequence Number:", rx_msg.getTopicSequenceNumber())	);
-						Long senderTimestamp = rx_msg.getSenderTimestamp();
-						if (senderTimestamp != null) {
-							Instant instant = Instant.ofEpochMilli(senderTimestamp);
-							ZonedDateTime dateTime = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault());
-							DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
-							System.out.println(String.format("%-39s %s%n","Sent at:", dateTime.format(formatter)));
-							sb.append(String.format("%-39s %s%n","Sent at:", dateTime.format(formatter)));
-						} else {
-							System.out.println(String.format("%-39s %s%n","Sent at:", "null"));
-							sb.append(String.format("%-39s %s%n","Sent at:", "null"));
-						}
-
-						long timeToLiveMs = rx_msg.getTimeToLive();
-						if (timeToLiveMs > 0) {
-							long expiryTimestamp = System.currentTimeMillis() + timeToLiveMs;
-							Instant expiryInstant = Instant.ofEpochMilli(expiryTimestamp);
-							System.out.println(String.format("%-39s %s%n","Expiry Time:", expiryInstant));
-							sb.append(String.format("%-39s %s%n","Expiry Time:", expiryInstant + "\n"));
-						} else {
-							System.out.println(String.format("%-39s %s%n","Message has no expiry (TTL is 0 or not set).", ""));
-							sb.append(String.format("%-39s %s%n","Message has no expiry (TTL is 0 or not set).", "\n"));
-						}																		
-						String queueData = "";
-						try{
-							if(rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl){						
-								//System.out.println("Queue data: " + new String(((TextMessageImpl)rx_msg).getText()));						
-								queueData = new String(((TextMessageImpl)rx_msg).getText());
-							}else if(rx_msg instanceof com.solacesystems.jcsmp.BytesMessage){
-								//System.out.println("Queue data: " + new String(((BytesMessage)rx_msg).getData()));						
-								queueData = new String(((BytesMessage)rx_msg).getData());
-							}	
-						}catch(Exception ex){
-							System.out.println("Unexpected error processing queue message. " + ex.getMessage());
-							sb.append("Unexpected error processing queue message. " + ex.getMessage());
-						}
-						sb.append("Content: " + queueData);
-						sb.append("\n-----------------------------------------------------------\n\n");						
+						appendMessageDetails(rx_msg, sb);
 						count = count + 1;
 					}
 				} while (rx_msg != null);
 				rx_msg = null;
 				// Close the Browser.
-				myBrowser.close();					
+				myBrowser.close();
 			}
 			System.out.println("Finished browsing.");
 			sb.append("\n\nTotal number of Messages browsed: " + String.valueOf(count));			
@@ -321,6 +210,182 @@ public class CustomQueueBrowse extends SampleApp {
 			writeToFile(ex.getMessage());
 			finish(1);
 		}								
+	}
+
+	void appendMessageDetails(BytesXMLMessage rx_msg, StringBuffer sb) {
+		System.out.println(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+		sb.append(rx_msg.dump(XMLMessage.MSGDUMP_BRIEF));
+
+		SDTMap map = rx_msg.getProperties();
+		if (map != null) {
+			for (String key : map.keySet()) {
+				try {
+					Object value = map.get(key);
+					System.out.println(String.format("%-39s %s%n", key + ":", value));
+					sb.append(String.format("%-39s %s%n", key + ":", value));
+				} catch (SDTException e) {
+					System.err.println("Error reading key: " + key + " - " + e.getMessage());
+				}
+			}
+		}
+		System.out.println(String.format("%-39s %s%n","Sequence Number:", rx_msg.getSequenceNumber()));
+		sb.append(String.format("%-39s %s%n","Sequence Number:", rx_msg.getSequenceNumber()));
+		System.out.println(String.format("%-39s %s%n","SenderId:", rx_msg.getSenderId()));
+		sb.append(String.format("%-39s %s%n","SenderId:", rx_msg.getSenderId()));
+		System.out.println(String.format("%-39s %s%n","Topic Sequence Number:", rx_msg.getTopicSequenceNumber()));
+		sb.append(String.format("%-39s %s%n","Topic Sequence Number:", rx_msg.getTopicSequenceNumber()));
+
+		Long senderTimestamp = rx_msg.getSenderTimestamp();
+		if (senderTimestamp != null) {
+			Instant instant = Instant.ofEpochMilli(senderTimestamp);
+			ZonedDateTime dateTime = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault());
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
+			System.out.println(String.format("%-39s %s%n","Sent at:", dateTime.format(formatter)));
+			sb.append(String.format("%-39s %s%n","Sent at:", dateTime.format(formatter)));
+		} else {
+			System.out.println(String.format("%-39s %s%n","Sent at:", "null"));
+			sb.append(String.format("%-39s %s%n","Sent at:", "null"));
+		}
+
+		long timeToLiveMs = rx_msg.getTimeToLive();
+		if (timeToLiveMs > 0) {
+			long expiryTimestamp = System.currentTimeMillis() + timeToLiveMs;
+			Instant expiryInstant = Instant.ofEpochMilli(expiryTimestamp);
+			System.out.println(String.format("%-39s %s%n","Expiry Time:", expiryInstant));
+			sb.append(String.format("%-39s %s%n","Expiry Time:", expiryInstant));
+		} else {
+			System.out.println("Message has no expiry (TTL is 0 or not set).");
+			sb.append("Message has no expiry (TTL is 0 or not set)." + "\n");
+		}
+
+		String queueData = "";
+		String payloadType = "TEXT";
+		try {
+			if (rx_msg instanceof com.solacesystems.jcsmp.impl.TextMessageImpl) {
+				queueData = ((TextMessageImpl) rx_msg).getText();
+				payloadType = detectPayloadType(queueData);
+			} else if (rx_msg instanceof com.solacesystems.jcsmp.BytesMessage) {
+				byte[] rawData = ((BytesMessage) rx_msg).getData();
+				payloadType = detectPayloadType(rawData);
+				if ("ZIP".equals(payloadType)) {
+					queueData = listZipEntries(rawData);
+				} else if (payloadType.startsWith("GZIP/")) {
+					byte[] decompressed = tryGunzip(rawData);
+					String innerType = payloadType.substring("GZIP/".length());
+					queueData = "ZIP".equals(innerType) ? listZipEntries(decompressed) : new String(decompressed);
+				} else {
+					queueData = new String(rawData);
+				}
+			} else {
+				sb.append(rx_msg);
+			}
+		} catch (Exception ex) {
+			System.out.println("Unexpected error processing queue message. " + ex.getMessage());
+			sb.append("Unexpected error processing queue message. " + ex.getMessage());
+		}
+
+		System.out.println(String.format("%-39s %s%n","Payload Type:", payloadType));
+		sb.append(String.format("%-39s %s%n","Payload Type:", payloadType));
+		sb.append("Content: " + queueData);
+		sb.append("\n-----------------------------------------------------------\n\n");
+	}
+
+	/**
+	 * Determines payload type for a BytesMessage by actually attempting to open it as
+	 * each candidate format rather than sniffing a prefix. ZIP must be checked against
+	 * the raw bytes before any charset decoding, since decoding binary content through
+	 * a String first can corrupt it.
+	 */
+	String detectPayloadType(byte[] rawData) {
+		if (rawData == null || rawData.length == 0) {
+			return "TEXT";
+		}
+		try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(rawData))) {
+			ZipEntry entry = zis.getNextEntry();
+			if (entry != null) {
+				return "ZIP";
+			}
+		} catch (IOException ex) {
+			// Not a valid zip stream - fall through to gzip/text-based detection.
+		}
+		byte[] decompressed = tryGunzip(rawData);
+		if (decompressed != null) {
+			return "GZIP/" + detectPayloadType(decompressed);
+		}
+		return detectPayloadType(new String(rawData));
+	}
+
+	/**
+	 * Attempts to gunzip the given bytes. Returns the decompressed bytes, or null if
+	 * the input isn't a valid gzip stream (GZIPInputStream validates the header/magic
+	 * bytes on open, so this is an actual open-attempt, not a prefix guess).
+	 */
+	byte[] tryGunzip(byte[] rawData) {
+		try (GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(rawData));
+				ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+			byte[] buffer = new byte[4096];
+			int len;
+			while ((len = gzis.read(buffer)) != -1) {
+				baos.write(buffer, 0, len);
+			}
+			return baos.toByteArray();
+		} catch (IOException ex) {
+			return null;
+		}
+	}
+
+	String detectPayloadType(String text) {
+		if (text == null) {
+			return "TEXT";
+		}
+		String trimmed = text.trim();
+		if (trimmed.isEmpty()) {
+			return "TEXT";
+		}
+		try {
+			if (trimmed.startsWith("{")) {
+				new JSONObject(trimmed);
+				return "JSON";
+			} else if (trimmed.startsWith("[")) {
+				new JSONArray(trimmed);
+				return "JSON";
+			}
+		} catch (JSONException ex) {
+			// Not valid JSON - fall through to XML/TEXT detection.
+		}
+		if (trimmed.startsWith("<")) {
+			try {
+				DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+				// Disable DOCTYPE declarations to avoid XXE while probing untrusted queue content.
+				factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+				DocumentBuilder builder = factory.newDocumentBuilder();
+				builder.parse(new InputSource(new StringReader(trimmed)));
+				return "XML";
+			} catch (Exception ex) {
+				// Not valid XML - fall through to TEXT.
+			}
+		}
+		return "TEXT";
+	}
+
+	String listZipEntries(byte[] rawData) {
+		StringBuilder entries = new StringBuilder();
+		entries.append("[ZIP archive, ").append(rawData.length).append(" bytes, entries: ");
+		try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(rawData))) {
+			ZipEntry entry;
+			boolean first = true;
+			while ((entry = zis.getNextEntry()) != null) {
+				if (!first) {
+					entries.append(", ");
+				}
+				entries.append(entry.getName());
+				first = false;
+			}
+		} catch (IOException ex) {
+			entries.append("<error reading entries: ").append(ex.getMessage()).append(">");
+		}
+		entries.append("]");
+		return entries.toString();
 	}
 
 	void writeToFile(String fileContent){
